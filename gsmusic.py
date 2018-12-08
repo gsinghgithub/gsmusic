@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+"""
+
+natural notes: SRGMPDN
+altered notes: Lower case: rgdnm
+higher octave: ' after note
+lower octave: . after note
+equally divided sub interval of single beat: (...) - under parenthesis
+Note continuation: -
+Note silence: ,
+
+"""
 from GsMidiFile import MIDIFile
 from GsMidiFile import TICKSPERBEAT_CONFIG
 import re
@@ -106,7 +117,7 @@ class Song(object):
         # May be first few measures or beats empty as song may start ayt any bit of a drum cycle (hindi->taala)
         # :V = volume, :R = rhythm, :C = chord
         # Check if song.txt exist
-        valid_notes = 'SsrRgGMmPpdDnN,-\' '
+        valid_notes = 'SsrRgGMmPpdDnN,-\'. '
         if os.path.exists('song.txt'):
             with open('song.txt') as fp:
                 notes = []
