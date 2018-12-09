@@ -473,8 +473,8 @@ class Song(object):
                 if note_position_hold == -1: note_position_hold = note_position # note position hold for - and ,
                 if notes_list[count + 1][0] == 121 and notes_list[count][0] != 120: # to address the ,- order and combination
                     duration_hold += notes_list[count + 1][1] # duration hold for current note
-                    note_position += notes_list[count][1] # this position will continue increasing as usual
-                    continue
+                note_position += notes_list[count][1] # this position will continue increasing as usual
+                continue
 
                 # last note is already covered in the last loop
                     # Known issues:
