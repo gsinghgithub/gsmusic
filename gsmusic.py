@@ -23,6 +23,7 @@ import logging.handlers
 #from datetime import datetime
 import time, datetime
 from time import gmtime, strftime
+import random
 print strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 CURRENT_MIDI = "midiout.mid"
@@ -89,6 +90,40 @@ https://www.csie.ntu.edu.tw/~r92092/ref/midi/
 
     # specified time is multiplied by ticks per beat
 '''
+
+
+# ==== generate tune ==== Start
+
+# numbers: .P = 55: P' =  79: continue = - = 80: pause = , = 81 # in the program the extendend note=: 48...83
+
+# range : 55-81
+
+
+
+exclude_1 = [55,65]
+def generate_tune(exclude_list):
+    my_randoms = []
+    for i in range(32):
+        rand_list = []
+        rand_len = random.randint(1,4)
+        #rand_len = 0
+        for i in range(rand_len):
+            rand_found = False
+            while not rand_found:
+                rand_num = random.randint(55,81)
+                if rand_num not in exclude_list: rand_found = True
+                #print "exclude note found"
+            rand_list.append(rand_num)
+        if rand_len == 1:
+            my_randoms.append(rand_list[0])
+        else:
+            my_randoms.append(tuple(rand_list))
+    print (my_randoms)
+
+# ==== generate tune ==== End
+
+
+
 
 # ==== play midi ==== Start
 
@@ -204,7 +239,9 @@ class Song(object):
             with open('song.txt') as fp:
                 notes = []
                 # read notes and duration
-                raw_song = fp.readlines()
+                #raw_song = fp.readlines()
+                raw_song = [self.generate_tune([], 4)]
+                print raw_song
            
                 # filter song comments:
                 songs_lines_srgm = [line.strip() for line in raw_song if (('#' not in line) and (line.strip() != '') and (':' not in line))]
@@ -259,7 +296,7 @@ class Song(object):
         # Check 1. if 1/2, 1/3,1/4 beat times work in the library implementation, 2. if there note off, note continue implementation is possible
         equal_time_notes = re.findall('\(.*?\)|.', bar)
         true_length_equal_notes = len([x for x in equal_time_notes if x not in accent_str])
-        equal_time = (time_signature*TICKSPERBEAT_CONFIG)/true_length_equal_notes
+        equal_time = (time_signature * TICKSPERBEAT_CONFIG) / true_length_equal_notes
         list_note = []
         skip_loop = False
         for i in range(0, len(equal_time_notes)):
@@ -267,8 +304,8 @@ class Song(object):
                 skip_loop = False
                 continue
             if not '(' in equal_time_notes[i]:
-                if (i < len(equal_time_notes) - 1) and equal_time_notes[i + 1] in accent_str:       
-                    list_note.append((self.get_note_num(equal_time_notes[i]+equal_time_notes[i+1]), equal_time))
+                if (i < len(equal_time_notes) - 1) and equal_time_notes[i + 1] in accent_str:
+                    list_note.append((self.get_note_num(equal_time_notes[i] + equal_time_notes[i + 1]), equal_time))
                     skip_loop = True
                 else:
                     list_note.append((self.get_note_num(equal_time_notes[i]), equal_time))
@@ -280,12 +317,14 @@ class Song(object):
                         skip_loop = False
                         continue
                     if (y < len(sub_notes) - 1) and sub_notes[y + 1] in accent_str:
-                        list_note.append((self.get_note_num(sub_notes[y]+sub_notes[y+1]), equal_time/sub_notes_length))
+                        list_note.append(
+                            (self.get_note_num(sub_notes[y] + sub_notes[y + 1]), equal_time / sub_notes_length))
                         skip_loop = True
                     else:
-                        list_note.append((self.get_note_num(sub_notes[y]), equal_time/sub_notes_length))
-               
+                        list_note.append((self.get_note_num(sub_notes[y]), equal_time / sub_notes_length))
+
         return list_note
+
 
     def get_note_num(self, note_name):
         self.note_num = None
@@ -299,7 +338,7 @@ class Song(object):
 
     def get_note_name(self, note_num):
         self.note_name = None
-        for index, item in self.note_enum:
+        for index, item in enumerate(self.notes_list, start=12):
             if note_num == index:
                 self.note_name = item
                 return self.note_name
@@ -337,6 +376,7 @@ class Song(object):
                 note_list.append(i + suffix)
                 #print i + repr(x)
             # 120(,) = S10, 121(-) = r10
+        #print note_list
         return note_list + [',', '-'] # , and - may not be be required to be added because they are filtered out later
 
     def binary_string_search(self, bytes_list, bytes_search_string):
@@ -524,8 +564,39 @@ class Song(object):
     def midi_to_notation(self, midi_file = 'output.mid', song_file = 'song_extract.txt'):
         self.read_midi()
 
+    # numbers: .P = 55: P' =  79: continue = - = 81: pause = , = 80 # in the program the extendend note=: 48...83
+
+    # range : 55-81
+
+    def generate_tune(self, exclude_list, bar_beats):
+        counter = 0
+        str_tune = ''
+        for i in range(32): # 1-bar music
+            rand_list = []
+            rand_len = random.randint(1,4)
+            for i in range(rand_len):
+                rand_found = False
+                while not rand_found:
+                    rand_num = random.randint(55,81)
+                    if rand_num not in exclude_list: rand_found = True
+
+                rand_note = self.get_note_name(rand_num)
+                if rand_num == 80: rand_note = ','
+                if rand_num == 81: rand_note = '-'
+                rand_list.append(rand_note)
+
+            if counter >= bar_beats:
+                counter = 0
+                str_tune += ' '
+            counter += 1
+            if rand_len == 1: str_tune += ''.join(rand_list)
+            else: str_tune += '(' + ''.join(rand_list) + ')'
+        return str_tune
+
 def main():
     song = Song()
+    #print song.generate_tune(exclude_1, 4)
+    #print repr(song.note_enum)
     song.midi_from_notation()
     #play_midi()
     play_midi_file(CURRENT_MIDI)
