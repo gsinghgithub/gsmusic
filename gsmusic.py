@@ -8,7 +8,10 @@ lower octave: . after note
 equally divided sub interval of single beat: (...) - under parenthesis
 Note continuation: -
 Note silence: ,
-
+Notation: one cycle (measure or bar per line)
+Note without parenthesis => 1 beat note
+121 = - = continue
+120 = , = pause/stop note
 """
 from GsMidiFile import MIDIFile
 from GsMidiFile import TICKSPERBEAT_CONFIG
@@ -17,9 +20,19 @@ import struct
 import os
 import logging
 import logging.handlers
-import time
+#from datetime import datetime
+import time, datetime
 from time import gmtime, strftime
-#print strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+print strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+CURRENT_MIDI = "midiout.mid"
+
+def time_stamp(): # with microsecond
+    #return strftime("%y%m%d_%H%M%S_%f", datetime.now())
+    return datetime.datetime.now().strftime("%y%m%d_%H%M%S_%f")
+print time_stamp()
+ # create midi out directory
+if not os.path.exists("midi_out_dir"): os.mkdir("midi_out_dir", 0o755)
 logger = logging.getLogger(__name__)
 LOGFILE = 'log_midi.txt'
 logger.setLevel(logging.DEBUG)
@@ -77,6 +90,75 @@ https://www.csie.ntu.edu.tw/~r92092/ref/midi/
     # specified time is multiplied by ticks per beat
 '''
 
+# ==== play midi ==== Start
+
+# play .mid music files using PyGame on your computer's sound card
+# PyGame is free from: http://www.pygame.org/news.html
+# tested with Python25 and PyGame171      vegaseat     27aug2007
+import pygame
+import os
+
+def play_music(music_file):
+    """
+    stream music with mixer.music module in blocking manner
+    this will stream the sound from disk while playing
+    """
+    clock = pygame.time.Clock()
+    try:
+        pygame.mixer.music.load(music_file)
+        print "Music file %s loaded!" % music_file
+    except pygame.error:
+        print "File %s not found! (%s)" % (music_file, pygame.get_error())
+        return
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        # check if playback has finished
+        clock.tick(30)
+# pick a midi music file you have ...
+# (if not in working folder use full path)
+
+def play_midi_file(file_name):
+    freq = 44100    # audio CD quality
+    bitsize = -16   # unsigned 16 bit
+    channels = 2    # 1 is mono, 2 is stereo
+    buffer = 1024    # number of samples
+    pygame.mixer.init(freq, bitsize, channels, buffer)
+    # optional volume 0 to 1.0
+    pygame.mixer.music.set_volume(0.8)
+    play_music(file_name)
+
+def music_files():
+    music_dir = "midi_out_dir/"
+    midi_files = os.listdir(music_dir)
+    for one in midi_files:
+        yield music_dir + one
+
+
+def play_midi():
+    freq = 44100    # audio CD quality
+    bitsize = -16   # unsigned 16 bit
+    channels = 2    # 1 is mono, 2 is stereo
+    buffer = 1024    # number of samples
+    pygame.mixer.init(freq, bitsize, channels, buffer)
+    # optional volume 0 to 1.0
+    pygame.mixer.music.set_volume(0.8)
+    for music_file in music_files():
+        try:
+            play_music(music_file)
+        except KeyboardInterrupt:
+            # if user hits Ctrl/C then exit
+            # (works only in console mode)
+            while True:
+                action = raw_input('Enter Q to Quit, Enter to Skip. ').lower()
+                if action == 'q':
+                    pygame.mixer.music.fadeout(1000)
+                    pygame.mixer.music.stop()
+                    raise SystemExit
+                else:
+                    break
+
+# ==== play midi ==== End
+
 class Song(object):
     def __init__(self):
 
@@ -117,14 +199,14 @@ class Song(object):
         # May be first few measures or beats empty as song may start ayt any bit of a drum cycle (hindi->taala)
         # :V = volume, :R = rhythm, :C = chord
         # Check if song.txt exist
-        valid_notes = 'SsrRgGMmPpdDnN,-\'. '
+        valid_notes = 'SsrRgGMmPpdDnN,\(\)-\'. '
         if os.path.exists('song.txt'):
             with open('song.txt') as fp:
                 notes = []
                 # read notes and duration
                 raw_song = fp.readlines()
            
-                # filter song comments
+                # filter song comments:
                 songs_lines_srgm = [line.strip() for line in raw_song if (('#' not in line) and (line.strip() != '') and (':' not in line))]
                 # check for valid characters
                 check = [x for x in songs_lines_srgm[0] if x not in valid_notes]   
@@ -135,8 +217,8 @@ class Song(object):
                 cycles = len(songs_lines_srgm)
                 # find total bars
                 temp_bars = [x.split(' ') for x in songs_lines_srgm]
-                #.replace('s', 'S').replace('p', 'P') # for accidental typing of s and p
-                # S and P are always natural, so lowercase letters are allowed
+                #.replace('s', 'S').replace('p', 'P') # for accidental typing  s and p
+                # S and P are always natural, so lowercase letters are allowedof
                 bars = [item.replace('s', 'S').replace('p', 'P') for sublist in temp_bars for item in sublist if item != '']
         
                 return bars
@@ -335,7 +417,7 @@ class Song(object):
 
 
     def create_test_midi(self, file_name):
-        file_name = 'output.mid'
+        file_name = 'midi_out_dir/tune' + time_stamp() + '.mid'
         notes_str =  ''
         notes = [60, 60, 64, 65, 67, 69, 71]
         duration = [480 for x in range(0, 7)]
@@ -358,6 +440,8 @@ class Song(object):
         self.create_midi_file(file_name, midifile)
 
     def midi_from_notation(self, file_name = 'output.mid', time_signature = 4):
+        file_name = 'midi_out_dir/tune_' + time_stamp() + '.mid'
+        #current_midi = file_name
         markers = [121,120]
         print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
         print 'BPB: Beats per bar: ' + repr(time_signature)
@@ -381,6 +465,7 @@ class Song(object):
     
         for count in range(0, notes_list_length):
             logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
                 # < notes_list_length - 1: takes care all notes except last note   
             if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
                 if duration_hold == 0: duration_hold = notes_list[count][1] # duration hold
@@ -388,21 +473,21 @@ class Song(object):
                 if note_position_hold == -1: note_position_hold = note_position # note position hold for - and ,
                 if notes_list[count + 1][0] == 121 and notes_list[count][0] != 120: # to address the ,- order and combination
                     duration_hold += notes_list[count + 1][1] # duration hold for current note
-                note_position += notes_list[count][1] # this position will continue increasing as usual
-                continue
-       
-            # last note is already covered in the last loop
-                # Known issues:
-            # 1. - or , does not work when song start with - or ,
-       
-            '''
-                # last note handling   
-            if count == notes_list_length - 1:
-            if notes_list[count][0] in markers:
-                if note_hold != 1: # if previous note is already on hold
-                if notes_list[count][0] == 121: # if -, current note duration should change
-                    duration_hold += notes_list[count][1]
-            '''       
+                    note_position += notes_list[count][1] # this position will continue increasing as usual
+                    continue
+
+                # last note is already covered in the last loop
+                    # Known issues:
+                # 1. - or , does not work when song start with - or ,
+
+                '''
+                    # last note handling   
+                if count == notes_list_length - 1:
+                if notes_list[count][0] in markers:
+                    if note_hold != 1: # if previous note is already on hold
+                    if notes_list[count][0] == 121: # if -, current note duration should change
+                        duration_hold += notes_list[count][1]
+                '''
             if note_hold != 1: # If last note is - or , : let it be handles by hold operation
                 # not by writing unnecessary code
                 self.midifile.addNote(self.track, self.channel, note_hold, note_position_hold, duration_hold, self.volume)
@@ -415,7 +500,9 @@ class Song(object):
                 self.midifile.addNote(self.track, self.channel, notes_list[count][0], note_position, notes_list[count][1], self.volume)
                 note_position += notes_list[count][1]
                 logger.debug('Line-3: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
-                self.create_midi_file(file_name, self.midifile)
+        self.create_midi_file(file_name, self.midifile)  # Create unique file
+        self.create_midi_file(CURRENT_MIDI, self.midifile)  # Create unique file
+
 
     def midi_from_notation2(self, file_name = 'output.mid', time_signature = 4):
         print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
@@ -431,7 +518,7 @@ class Song(object):
             for note in notes_list:
                 self.midifile.addNote(self.track, self.channel, note[0], note_position, note[1], self.volume)
                 note_position += note[1]
-                self.create_midi_file(file_name, self.midifile)
+        self.create_midi_file(file_name, self.midifile)
 
 
     def midi_to_notation(self, midi_file = 'output.mid', song_file = 'song_extract.txt'):
@@ -440,6 +527,8 @@ class Song(object):
 def main():
     song = Song()
     song.midi_from_notation()
+    #play_midi()
+    play_midi_file(CURRENT_MIDI)
     #song.midi_to_notation()
 
     print 'DONE'
