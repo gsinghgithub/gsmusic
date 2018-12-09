@@ -27,6 +27,7 @@ import random
 print strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 CURRENT_MIDI = "midiout.mid"
+CURRENT_BEAT = "beatout.mid"
 
 def time_stamp(): # with microsecond
     #return strftime("%y%m%d_%H%M%S_%f", datetime.now())
@@ -34,6 +35,7 @@ def time_stamp(): # with microsecond
 print time_stamp()
  # create midi out directory
 if not os.path.exists("midi_out_dir"): os.mkdir("midi_out_dir", 0o755)
+if not os.path.exists("beat_out_dir"): os.mkdir("beat_out_dir", 0o755)
 logger = logging.getLogger(__name__)
 LOGFILE = 'log_midi.txt'
 logger.setLevel(logging.DEBUG)
@@ -240,7 +242,7 @@ class Song(object):
                 notes = []
                 # read notes and duration
                 #raw_song = fp.readlines()
-                raw_song = [self.generate_tune([], 4)]
+                raw_song = [self.generate_tune('SrRgmMdDnN', 4)]
                 print raw_song
            
                 # filter song comments:
@@ -578,11 +580,144 @@ class Song(object):
                 rand_found = False
                 while not rand_found:
                     rand_num = random.randint(55,81)
-                    if rand_num not in exclude_list: rand_found = True
+                    if rand_num == 80: rand_note = ','
+                    if rand_num == 81: rand_note = '-'
+                    rand_note = self.get_note_name(rand_num)
+                    if rand_note.replace('.', '').replace('\'', '') not in exclude_list: rand_found = True
+                    #if rand_num not in exclude_list: rand_found = True
+                rand_list.append(rand_note)
 
-                rand_note = self.get_note_name(rand_num)
-                if rand_num == 80: rand_note = ','
-                if rand_num == 81: rand_note = '-'
+            if counter >= bar_beats:
+                counter = 0
+                str_tune += ' '
+            counter += 1
+            if rand_len == 1: str_tune += ''.join(rand_list)
+            else: str_tune += '(' + ''.join(rand_list) + ')'
+        return str_tune
+
+    def make_beats(self, file_name='beatout.mid', time_signature=4):
+        file_name = 'beat_out_dir/beat_' + time_stamp() + '.mid'
+        # current_midi = file_name
+        markers = [121, 120]
+        print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
+        print 'BPB: Beats per bar: ' + repr(time_signature)
+        print 'BAR LENGTH: ' + repr(time_signature * TICKSPERBEAT_CONFIG) + ' ticks'
+        notes_list = []
+        bars = self.read_beats()
+        print 'BARS: ' + repr(len(bars))
+        for bar in bars:
+            notes_list += self.bar_to_tuple(bar,
+                                            time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
+        print notes_list
+        note_position = 0
+        duration = 0
+        volume = 0
+        note = 1  # Representation of empty note: Also volume = 0
+        note_hold = 1
+        duration_hold = 0
+        note_position_hold = -1
+
+        notes_list_length = len(notes_list)
+        # Consideration last - or ,
+
+        for count in range(0, notes_list_length):
+            logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            # < notes_list_length - 1: takes care all notes except last note
+            if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
+                if duration_hold == 0: duration_hold = notes_list[count][1]  # duration hold
+                if note_hold == 1: note_hold = notes_list[count][0]  # note hold
+                if note_position_hold == -1: note_position_hold = note_position  # note position hold for - and ,
+                if notes_list[count + 1][0] == 121 and notes_list[count][
+                    0] != 120:  # to address the ,- order and combination
+                    duration_hold += notes_list[count + 1][1]  # duration hold for current note
+                note_position += notes_list[count][1]  # this position will continue increasing as usual
+                continue
+
+                # last note is already covered in the last loop
+                # Known issues:
+                # 1. - or , does not work when song start with - or ,
+
+                '''
+                    # last note handling   
+                if count == notes_list_length - 1:
+                if notes_list[count][0] in markers:
+                    if note_hold != 1: # if previous note is already on hold
+                    if notes_list[count][0] == 121: # if -, current note duration should change
+                        duration_hold += notes_list[count][1]
+                '''
+            if note_hold != 1:  # If last note is - or , : let it be handles by hold operation
+                # not by writing unnecessary code
+                self.midifile.addNote(self.track, self.channel, note_hold, note_position_hold, duration_hold,
+                                      self.volume)
+                note_position += notes_list[count][1]  # update note position
+                note_hold = 1  # disable note hold
+                note_position_hold = -1  # disable note position hold
+                duration_hold = 0  # disable duration hold
+                logger.debug('Line-2: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            else:
+                self.midifile.addNote(self.track, self.channel, notes_list[count][0], note_position,
+                                      notes_list[count][1], self.volume)
+                note_position += notes_list[count][1]
+                logger.debug('Line-3: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+        self.create_midi_file(file_name, self.midifile)  # Create unique file
+        self.create_midi_file(CURRENT_BEAT, self.midifile)  # Create unique file
+
+    def read_beats(self):
+        # space = bar or measure or cycle separator
+        # May be first few measures or beats empty as song may start ayt any bit of a drum cycle (hindi->taala)
+        # :V = volume, :R = rhythm, :C = chord
+        # Check if song.txt exist
+        valid_notes = 'SsrRgGMmPpdDnN,\(\)-\'. '
+        if os.path.exists('song.txt'):
+            with open('song.txt') as fp:
+                notes = []
+                # read notes and duration
+                # raw_song = fp.readlines()
+                raw_song = [self.generate_beat('SrRgmMdDnN', 4)]
+                print raw_song
+
+                # filter song comments:
+                songs_lines_srgm = [line.strip() for line in raw_song if
+                                    (('#' not in line) and (line.strip() != '') and (':' not in line))]
+                # check for valid characters
+                check = [x for x in songs_lines_srgm[0] if x not in valid_notes]
+                if len(check) > 0:
+                    print 'Invalid characters in the song notation: ' + repr(check)
+                    exit(0)
+                # find total cycles
+                cycles = len(songs_lines_srgm)
+                # find total bars
+                temp_bars = [x.split(' ') for x in songs_lines_srgm]
+                # .replace('s', 'S').replace('p', 'P') # for accidental typing  s and p
+                # S and P are always natural, so lowercase letters are allowedof
+                bars = [item.replace('s', 'S').replace('p', 'P') for sublist in temp_bars for item in sublist if
+                        item != '']
+
+                return bars
+        else:
+            print 'song.txt does not exist. No Midi file will be created.'
+            exit(0)
+
+    # numbers: .P = 55: P' =  79: continue = - = 81: pause = , = 80 # in the program the extendend note=: 48...83
+
+    # range : 55-81
+
+    def generate_beat(self, exclude_list, bar_beats):
+        counter = 0
+        str_tune = ''
+        for i in range(32): # 1-bar music
+            rand_list = []
+            rand_len = random.randint(1,4)
+            for i in range(rand_len):
+                rand_found = False
+                while not rand_found:
+                    rand_num = random.randint(55,81)
+                    if rand_num == 80: rand_note = ','
+                    if rand_num == 81: rand_note = '-'
+                    rand_note = self.get_note_name(rand_num)
+                    if rand_note.replace('.', '').replace('\'', '') not in exclude_list: rand_found = True
+                    #if rand_num not in exclude_list: rand_found = True
                 rand_list.append(rand_note)
 
             if counter >= bar_beats:
@@ -595,13 +730,12 @@ class Song(object):
 
 def main():
     song = Song()
-    #print song.generate_tune(exclude_1, 4)
-    #print repr(song.note_enum)
+    """
     song.midi_from_notation()
-    #play_midi()
     play_midi_file(CURRENT_MIDI)
-    #song.midi_to_notation()
-
+    """
+    song.make_beats(8)
+    play_midi_file(CURRENT_BEAT)
     print 'DONE'
 if __name__ == '__main__':
     main()
