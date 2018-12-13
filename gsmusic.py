@@ -3,7 +3,6 @@
 '''
 # Notes/Issues
 - first note with ',' has issue: fixs- 1. do not allow, b- make zero volume
-#- Invalid character check : only for line 0: Only single line compiosion is checked and validated: Done
 '''
 
 """
@@ -499,11 +498,14 @@ class Song(object):
         #current_midi = file_name
         markers = [121,120]
         print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
-        print 'BPB: Beats per bar: ' + repr(time_signature)
         print 'BAR LENGTH: ' + repr(time_signature*TICKSPERBEAT_CONFIG) + ' ticks'
         notes_list = []
         bars = self.read_song()
+        print 'BPB: Beats per bar(quarter notes): ' + repr(time_signature)
         print 'BARS: ' + repr(len(bars))
+        print 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo)
+        print 'TQB: Total quarter beats: ' + str(len(bars)*time_signature)
+        print 'Song Time: ' + str(len(bars)*time_signature*60/self.tempo) + ' seconds: ' + str(round(len(bars)*time_signature*1.0/self.tempo, 2)) + ' minutes'
         for bar in bars:
             notes_list += self.bar_to_tuple(bar, time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
         print notes_list
@@ -512,7 +514,17 @@ class Song(object):
             fpw.writelines(str(bars))
             fpw.writelines('\n\n')
             fpw.writelines(str(notes_list))
-
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPB: Beats per bar(quarter notes): ' + repr(time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BARS: ' + repr(len(bars)))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'TQB: Total quarter beats: ' + str(len(bars) * time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'Song Time: ' + str(len(bars) * time_signature * 60 / self.tempo) + ' seconds: ' + str(
+                round(len(bars) * time_signature * 1.0 / self.tempo, 2)) + ' minutes')
 
         note_position = 0
         duration = 0
