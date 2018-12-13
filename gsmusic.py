@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+
+'''
+# Notes/Issues
+- first note with ',' has issue: fixs- 1. do not allow, b- make zero volume
+-
+'''
+
 """
 
 natural notes: SRGMPDN
@@ -580,9 +587,9 @@ class Song(object):
                 rand_found = False
                 while not rand_found:
                     rand_num = random.randint(55,81)
+                    rand_note = self.get_note_name(rand_num)
                     if rand_num == 80: rand_note = ','
                     if rand_num == 81: rand_note = '-'
-                    rand_note = self.get_note_name(rand_num)
                     if rand_note.replace('.', '').replace('\'', '') not in exclude_list: rand_found = True
                     #if rand_num not in exclude_list: rand_found = True
                 rand_list.append(rand_note)
@@ -597,6 +604,7 @@ class Song(object):
 
     def make_beats(self, file_name='beatout.mid', time_signature=4):
         file_name = 'beat_out_dir/beat_' + time_stamp() + '.mid'
+        file_name_composition = 'beat_out_dir/beat_' + time_stamp() + '.txt'
         # current_midi = file_name
         markers = [121, 120]
         print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
@@ -713,16 +721,16 @@ class Song(object):
                 rand_found = False
                 while not rand_found:
                     rand_num = random.randint(55,81)
+                    rand_note = self.get_note_name(rand_num)
                     if rand_num == 80: rand_note = ','
                     if rand_num == 81: rand_note = '-'
-                    rand_note = self.get_note_name(rand_num)
                     if rand_note.replace('.', '').replace('\'', '') not in exclude_list: rand_found = True
                     #if rand_num not in exclude_list: rand_found = True
                 rand_list.append(rand_note)
 
             if counter >= bar_beats:
                 counter = 0
-                str_tune += ' '
+                str_tune += '  '
             counter += 1
             if rand_len == 1: str_tune += ''.join(rand_list)
             else: str_tune += '(' + ''.join(rand_list) + ')'
@@ -730,12 +738,12 @@ class Song(object):
 
 def main():
     song = Song()
-    """
+    #"""
     song.midi_from_notation()
     play_midi_file(CURRENT_MIDI)
-    """
-    song.make_beats(8)
-    play_midi_file(CURRENT_BEAT)
+    #"""
+    #song.make_beats(8)
+    #play_midi_file(CURRENT_BEAT)
     print 'DONE'
 if __name__ == '__main__':
     main()
