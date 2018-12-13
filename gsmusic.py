@@ -243,6 +243,7 @@ class Song(object):
         # May be first few measures or beats empty as song may start ayt any bit of a drum cycle (hindi->taala)
         # :V = volume, :R = rhythm, :C = chord
         # Check if song.txt exist
+        raw_song = ''
         valid_notes = 'SsrRgGMmPpdDnN,\(\)-\'. '
         if os.path.exists('song.txt'):
             with open('song.txt') as fp:
@@ -269,7 +270,7 @@ class Song(object):
                 #.replace('s', 'S').replace('p', 'P') # for accidental typing  s and p
                 # S and P are always natural, so lowercase letters are allowedof
                 bars = [item.replace('s', 'S').replace('p', 'P') for sublist in temp_bars for item in sublist if item != ''] # empty items due to extra space or other reasons - removed
-        
+
                 return bars
         else:
             print 'song.txt does not exist. No Midi file will be created.'
@@ -493,6 +494,8 @@ class Song(object):
 
     def midi_from_notation(self, file_name = 'output.mid', time_signature = 4):
         file_name = 'midi_out_dir/tune_' + time_stamp() + '.mid'
+        file_name_song = 'midi_out_dir/tune_' + time_stamp() + '.txt'
+
         #current_midi = file_name
         markers = [121,120]
         print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
@@ -504,6 +507,13 @@ class Song(object):
         for bar in bars:
             notes_list += self.bar_to_tuple(bar, time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
         print notes_list
+
+        with open(file_name_song, 'a') as fpw:
+            fpw.writelines(str(bars))
+            fpw.writelines('\n\n')
+            fpw.writelines(str(notes_list))
+
+
         note_position = 0
         duration = 0
         volume = 0
