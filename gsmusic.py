@@ -3,7 +3,7 @@
 '''
 # Notes/Issues
 - first note with ',' has issue: fixs- 1. do not allow, b- make zero volume
--
+#- Invalid character check : only for line 0: Only single line compiosion is checked and validated: Done
 '''
 
 """
@@ -255,7 +255,10 @@ class Song(object):
                 # filter song comments:
                 songs_lines_srgm = [line.strip() for line in raw_song if (('#' not in line) and (line.strip() != '') and (':' not in line))]
                 # check for valid characters
-                check = [x for x in songs_lines_srgm[0] if x not in valid_notes]   
+                for y in songs_lines_srgm:
+                    #check = [x for x in songs_lines_srgm[0] if x not in valid_notes]
+                    check = [x for x in y if x not in valid_notes]
+
                 if len(check) > 0:
                     print 'Invalid characters in the song notation: ' + repr(check)
                     exit(0)
@@ -265,7 +268,7 @@ class Song(object):
                 temp_bars = [x.split(' ') for x in songs_lines_srgm]
                 #.replace('s', 'S').replace('p', 'P') # for accidental typing  s and p
                 # S and P are always natural, so lowercase letters are allowedof
-                bars = [item.replace('s', 'S').replace('p', 'P') for sublist in temp_bars for item in sublist if item != '']
+                bars = [item.replace('s', 'S').replace('p', 'P') for sublist in temp_bars for item in sublist if item != ''] # empty items due to extra space or other reasons - removed
         
                 return bars
         else:
@@ -596,7 +599,7 @@ class Song(object):
 
             if counter >= bar_beats:
                 counter = 0
-                str_tune += ' '
+                str_tune += '  '
             counter += 1
             if rand_len == 1: str_tune += ''.join(rand_list)
             else: str_tune += '(' + ''.join(rand_list) + ')'
