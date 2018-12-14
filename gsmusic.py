@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 '''
-# Notes/Issues
-- first note with ',' has issue: fixs- 1. do not allow, b- make zero volume
+# fix tempo changes
 
 '''
 
@@ -221,10 +220,10 @@ class Song(object):
         self.program = 0
         self.pitch = 60 # C4 = Middle C
         self.track_name = 'Base Track'
-        self.midifile = MIDIFile(self.tracks)
-        self.midifile.addTrackName(self.track, self.time, self.track_name)
-        self.midifile.addTempo(self.track, self.time, self.tempo)
-        self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
+        #self.midifile = MIDIFile(self.tracks)
+        #self.midifile.addTrackName(self.track, self.time, self.track_name)
+        #self.midifile.addTempo(self.track, self.time, self.tempo)
+        #self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
 
     def create_midi_file(self, file_name, midifile):
         with open(file_name, 'wb') as outf:
@@ -493,6 +492,22 @@ class Song(object):
         self.create_midi_file(file_name, midifile)
 
     def midi_from_notation(self, file_name = 'output.mid', time_signature = 4):
+        self.tracks = 1 # single track midi
+        self.tempo = 160
+        self.volume = 127
+        self.duration = 1 # 1 beat long
+        self.track = 0 # mono track
+        self.time = 0 # t on beat - 0
+        self.channel = 0 # 0-9: channel-10=>drum=>9
+        self.program = 0
+        self.pitch = 60 # C4 = Middle C
+        self.track_name = 'Base Track'
+
+        self.midifile = MIDIFile(self.tracks)
+        self.midifile.addTrackName(self.track, self.time, self.track_name)
+        self.midifile.addTempo(self.track, self.time, self.tempo)
+        self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
+
         file_name = 'midi_out_dir/tune_' + time_stamp() + '.mid'
         file_name_song = 'midi_out_dir/tune_' + time_stamp() + '.txt'
 
@@ -629,6 +644,22 @@ class Song(object):
         return str_tune
 
     def make_beats(self, file_name='beatout.mid', time_signature=4):
+        self.tracks = 1 # single track midi
+        self.tempo = 125
+        self.volume = 127
+        self.duration = 1 # 1 beat long
+        self.track = 0 # mono track
+        self.time = 0 # t on beat - 0
+        self.channel = 0  # 0-9: channel-10=>drum=>9
+        self.program = 0
+        self.pitch = 60 # C4 = Middle C
+        self.track_name = 'Base Track'
+
+        self.midifile = MIDIFile(self.tracks)
+        self.midifile.addTrackName(self.track, self.time, self.track_name)
+        self.midifile.addTempo(self.track, self.time, self.tempo)
+        self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
+
         file_name = 'beat_out_dir/beat_' + time_stamp() + '.mid'
         file_name_beats = 'beat_out_dir/beat_' + time_stamp() + '.txt'
         # current_midi = file_name
@@ -782,11 +813,11 @@ class Song(object):
 def main():
     song = Song()
 
-    #song.midi_from_notation()
-    #play_midi_file(CURRENT_MIDI)
+    song.midi_from_notation()
+    play_midi_file(CURRENT_MIDI)
 
-    song.make_beats(8)
-    play_midi_file(CURRENT_BEAT)
+    #song.make_beats(8)
+    #play_midi_file(CURRENT_BEAT)
 
     print 'DONE'
 if __name__ == '__main__':
