@@ -100,39 +100,6 @@ https://www.csie.ntu.edu.tw/~r92092/ref/midi/
 '''
 
 
-# ==== generate tune ==== Start
-
-# numbers: .P = 55: P' =  79: continue = - = 80: pause = , = 81 # in the program the extendend note=: 48...83
-
-# range : 55-81
-
-
-
-exclude_1 = [55,65]
-def generate_tune(exclude_list):
-    my_randoms = []
-    for i in range(32):
-        rand_list = []
-        rand_len = random.randint(1,4)
-        #rand_len = 0
-        for i in range(rand_len):
-            rand_found = False
-            while not rand_found:
-                rand_num = random.randint(55,81)
-                if rand_num not in exclude_list: rand_found = True
-                #print "exclude note found"
-            rand_list.append(rand_num)
-        if rand_len == 1:
-            my_randoms.append(rand_list[0])
-        else:
-            my_randoms.append(tuple(rand_list))
-    print (my_randoms)
-
-# ==== generate tune ==== End
-
-
-
-
 # ==== play midi ==== Start
 
 # play .mid music files using PyGame on your computer's sound card
@@ -211,7 +178,8 @@ class Song(object):
         self.note_enum = enumerate(self.notes_list, start = 12)
     #self.bars = self.read_song()
         self.tracks = 1 # single track midi
-        self.tempo = 120
+        #self.tempo = 120
+        self.tempo = self.generate_random_number(include_list=[60, 95])
         self.volume = 127
         self.duration = 1 # 1 beat long
         self.track = 0 # mono track
@@ -493,7 +461,7 @@ class Song(object):
 
     def midi_from_notation(self, file_name = 'output.mid', time_signature = 4):
         self.tracks = 1 # single track midi
-        self.tempo = 160
+        #self.tempo = self.generate_random_number(include_list=[60,95])
         self.volume = 127
         self.duration = 1 # 1 beat long
         self.track = 0 # mono track
@@ -555,7 +523,7 @@ class Song(object):
     
         for count in range(0, notes_list_length):
             logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
-            print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            #print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
                 # < notes_list_length - 1: takes care all notes except last note   
             if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
                 if duration_hold == 0: duration_hold = notes_list[count][1] # duration hold
@@ -614,6 +582,16 @@ class Song(object):
     def midi_to_notation(self, midi_file = 'output.mid', song_file = 'song_extract.txt'):
         self.read_midi()
 
+    def generate_random_number(self, lower_num = 0, upper_num = 0, include_list = [], exclude_list = []):
+        rand_found = False
+        while not rand_found:
+            if len(include_list) == 0:
+                rand_num = random.randint(lower_num,upper_num)
+            else: rand_num = random.choice(include_list)   # choice is inclusive
+            if rand_num not in exclude_list: rand_found = True
+        self.random_num = rand_num # generated numbers are inclusive => includes boundary number
+        return self.random_num
+
     # numbers: .P = 55: P' =  79: continue = - = 81: pause = , = 80 # in the program the extendend note=: 48...83
 
     # range : 55-81
@@ -645,7 +623,7 @@ class Song(object):
 
     def make_beats(self, file_name='beatout.mid', time_signature=4):
         self.tracks = 1 # single track midi
-        self.tempo = 125
+        #self.tempo = 125
         self.volume = 127
         self.duration = 1 # 1 beat long
         self.track = 0 # mono track
@@ -665,11 +643,15 @@ class Song(object):
         # current_midi = file_name
         markers = [121, 120]
         print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
-        print 'BPB: Beats per bar: ' + repr(time_signature)
         print 'BAR LENGTH: ' + repr(time_signature * TICKSPERBEAT_CONFIG) + ' ticks'
         notes_list = []
         bars = self.read_beats()
+        print 'BPB: Beats per bar(quarter notes): ' + repr(time_signature)
         print 'BARS: ' + repr(len(bars))
+        print 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo)
+        print 'TQB: Total quarter beats: ' + str(len(bars)*time_signature)
+        print 'Cycle Time: ' + str(len(bars)*time_signature*60/self.tempo) + ' seconds: ' + str(round(len(bars)*time_signature*1.0/self.tempo, 2)) + ' minutes'
+
         for bar in bars:
             notes_list += self.bar_to_tuple(bar,
                                             time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
@@ -704,7 +686,7 @@ class Song(object):
 
         for count in range(0, notes_list_length):
             logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
-            print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            #print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
             # < notes_list_length - 1: takes care all notes except last note
             if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
                 if duration_hold == 0: duration_hold = notes_list[count][1]  # duration hold
