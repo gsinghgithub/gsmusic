@@ -650,7 +650,7 @@ class Song(object):
         self.duration = 1 # 1 beat long
         self.track = 0 # mono track
         self.time = 0 # t on beat - 0
-        self.channel = 0  # 0-9: channel-10=>drum=>9
+        self.channel = 9  # 0-9: channel-10=>drum=>9
         self.program = 0
         self.pitch = 60 # C4 = Middle C
         self.track_name = 'Base Track'
@@ -816,8 +816,8 @@ def main():
     song.midi_from_notation()
     play_midi_file(CURRENT_MIDI)
 
-    #song.make_beats(8)
-    #play_midi_file(CURRENT_BEAT)
+    song.make_beats(8)
+    play_midi_file(CURRENT_BEAT)
 
     print 'DONE'
 if __name__ == '__main__':
