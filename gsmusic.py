@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 '''
-# fix tempo changes
-
+=== Next features/bug fixes
+- limitation on next note: 1. to be in a chord OR chord progression rule
+- determine chord progressions in the tune: Make foeward movement to determine chords on the final ctreatred bars
+- implememt repeat on tune and beats:
 '''
 
 """
