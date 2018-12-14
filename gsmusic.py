@@ -3,6 +3,7 @@
 '''
 # Notes/Issues
 - first note with ',' has issue: fixs- 1. do not allow, b- make zero volume
+
 '''
 
 """
@@ -629,7 +630,7 @@ class Song(object):
 
     def make_beats(self, file_name='beatout.mid', time_signature=4):
         file_name = 'beat_out_dir/beat_' + time_stamp() + '.mid'
-        file_name_composition = 'beat_out_dir/beat_' + time_stamp() + '.txt'
+        file_name_beats = 'beat_out_dir/beat_' + time_stamp() + '.txt'
         # current_midi = file_name
         markers = [121, 120]
         print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
@@ -642,6 +643,23 @@ class Song(object):
             notes_list += self.bar_to_tuple(bar,
                                             time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
         print notes_list
+
+        with open(file_name_beats, 'a') as fpw:
+            fpw.writelines(str(bars))
+            fpw.writelines('\n\n')
+            fpw.writelines(str(notes_list))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPB: Beats per bar(quarter notes): ' + repr(time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BARS: ' + repr(len(bars)))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'TQB: Total quarter beats: ' + str(len(bars) * time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'Song Time: ' + str(len(bars) * time_signature * 60 / self.tempo) + ' seconds: ' + str(
+                round(len(bars) * time_signature * 1.0 / self.tempo, 2)) + ' minutes')
+
         note_position = 0
         duration = 0
         volume = 0
@@ -763,12 +781,13 @@ class Song(object):
 
 def main():
     song = Song()
-    #"""
-    song.midi_from_notation()
-    play_midi_file(CURRENT_MIDI)
-    #"""
-    #song.make_beats(8)
-    #play_midi_file(CURRENT_BEAT)
+
+    #song.midi_from_notation()
+    #play_midi_file(CURRENT_MIDI)
+
+    song.make_beats(8)
+    play_midi_file(CURRENT_BEAT)
+
     print 'DONE'
 if __name__ == '__main__':
     main()
