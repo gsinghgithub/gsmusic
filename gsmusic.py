@@ -1,10 +1,23 @@
 #!/usr/bin/env python
 
 '''
+==== Features implemented ====
+- Create random tune
+
+==== Features Planned ====
+- Create random tune
+- Crearte random beats (rythms)
+- Create gsmusic format songs
+- Create complete music section (A, B, ..)
+- Play gsmusic format songs (.gsm)
+
+
 === Next features/bug fixes
 - limitation on next note: 1. to be in a chord OR chord progression rule
 - determine chord progressions in the tune: Make foeward movement to determine chords on the final ctreatred bars
 - implememt repeat on tune and beats:
+- brainstorm: use of standardized pattern
+- making final music: using mutiple patterns: start-end of music rules: start chord and end chord
 '''
 
 """
