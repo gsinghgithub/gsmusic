@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
 '''
+==== Technical implementations ====
+- make different feature calls : argument based
+
+
 ==== Features implemented ====
 - Create random tune
 
@@ -34,6 +38,7 @@ Note without parenthesis => 1 beat note
 121 = - = continue
 120 = , = pause/stop note
 """
+import argparse
 from GsMidiFile import MIDIFile
 from GsMidiFile import TICKSPERBEAT_CONFIG
 import re
@@ -45,6 +50,12 @@ import logging.handlers
 import time, datetime
 from time import gmtime, strftime
 import random
+
+parser = argparse.ArgumentParser(description='GSMusic !')
+
+
+
+
 print strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 CURRENT_MIDI = "midiout.mid"
@@ -808,6 +819,8 @@ class Song(object):
         return str_tune
 
 def main():
+
+
     song = Song()
 
     song.midi_from_notation()
