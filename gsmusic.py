@@ -3,7 +3,7 @@
 '''
 ==== Technical implementations ====
 - make different feature calls : argument based
-
+- argparse implementation: expected - default run without any arg, 2. if arg given run feature for that, 3 number based
 
 ==== Features implemented ====
 - Create random tune
@@ -51,9 +51,24 @@ import time, datetime
 from time import gmtime, strftime
 import random
 
-parser = argparse.ArgumentParser(description='GSMusic !')
+parser = argparse.ArgumentParser(description='GSMusic !', epilog="... Exploring Indian music with technology !")
+optional = parser._action_groups.pop()
+#required = parser.add_argument_group('required arguments')
+# remove this line: optional = parser...
+#required.add_argument('--required_arg')
+#optional.add_argument('--optional_arg')
 
+#parser.add_argument('integers', metavar='N', type=int, nargs='+',
+#                   help='an integer for the accumulator')
+#parser.add_argument('--sum', dest='accumulate', action='store_const',
+#                    const=sum, default=max,
+#                    help='sum the integers (default: find the max)')
+#required.add_argument('-n', action='store', dest='arg_num', help='Store a simple value')
+optional.add_argument('arg_num', nargs = '?')
+parser._action_groups.append(optional)
+args = parser.parse_args()
 
+arg_value = int(args.arg_num)
 
 
 print strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -819,15 +834,19 @@ class Song(object):
         return str_tune
 
 def main():
+    if arg_value == 1:
 
+        song = Song()
 
-    song = Song()
+        song.midi_from_notation()
+        play_midi_file(CURRENT_MIDI)
 
-    song.midi_from_notation()
-    play_midi_file(CURRENT_MIDI)
+        song.make_beats(8)
+        play_midi_file(CURRENT_BEAT)
 
-    song.make_beats(8)
-    play_midi_file(CURRENT_BEAT)
+    if arg_value is None:
+        print 'Nothing to do'
+
 
     print 'DONE'
 if __name__ == '__main__':
