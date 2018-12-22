@@ -297,7 +297,7 @@ class Song(object):
                 # read notes and duration
                 if not random:
                     raw_song = fp.readlines()
-                    if '[' in repr(raw_song):
+                    if '[\"[' in repr(raw_song):
                         print '[ - found'
                         raw_song = [raw_song[0].replace('[\'', '').replace('[', '').replace(']', '').replace(', \'', '').replace('\',', '').replace('\"', '')]
                         print raw_song
