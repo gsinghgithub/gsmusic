@@ -315,7 +315,7 @@ class Song(object):
 
                 # filter song comments:
                 songs_lines_srgm = [line.strip() for line in raw_song if
-                                    (('#' not in line) and (line.strip() != '') and (':' not in line))]
+                                    (('#' not in line) and (line.strip() != '') and (':' not in line) and ('=' not in line))]
                 print "Song Lines: " + str(len(songs_lines_srgm))
                 # check for valid characters
                 for y in songs_lines_srgm:
@@ -636,7 +636,7 @@ class Song(object):
             fpw.writelines('\n\n')
             fpw.writelines(str(notes_list))
             fpw.writelines('\n\n')
-            fpw.writelines('====SONG_INFO====')
+            fpw.writelines('====SONG_INFO====\n')
             fpw.writelines('BPB: Beats per bar(quarter notes): ' + repr(time_signature))
             fpw.writelines('\n\n')
             fpw.writelines('BARS: ' + repr(len(bars)))
