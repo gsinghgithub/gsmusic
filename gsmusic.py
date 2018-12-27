@@ -52,6 +52,15 @@ beats = {
 # Assumptions and Standards
 
 """
+beat: basic time unit in the music composition or score. It is assumption for simplifying the music comosition communication
+      Once basic time unit is defined, then we can go from there as bars value: 4 beats per bar. Bar is repeatitiveness of
+      beats pattern or whole music pattern, so there may be more whole note in one bar. bar = measure, but bar mean whole note.
+      beat is about basic unit of music composition, Whole note gives timing impression (but not precise time, it gives idea of
+      relative time: tempo is precise time). Whole note, bar, brats will gibe relative idea of timeing in the composition. 
+      Usually drum cycles repeats at bars. beats and temo has different units, but can be mapped such as length and time.
+      beats, bars, measures are  way to describe music rather than absolute time - are units to organize music.
+=> Drum components: volume, timing, fill/roll/run/rudiments, break/drop/stop, start,      
+=> BPM range: 70 (R&B, ) - 90:100(hip hop - rap)    - 150 (disco) -   
 natural notes: SRGMPDN
 altered notes: Lower case: rgdnm
 higher octave: ' after note
@@ -66,6 +75,12 @@ Note without parenthesis => 1 beat note
 => bar length is decided by the time signature
 => two bars must be seaparated by space: number of spaces does not matter: one or more spaces are same
 => All notes together will be treated as one bar - each note taking time frpm the bar time
+
+==== Alankars ====
+SRGMPDNS' S'NDPMGRS
+SRG RGM GMP
+
+
 
 """
 
@@ -256,7 +271,7 @@ class Song(object):
 
         self.note_enum = enumerate(self.notes_list, start = 12)
     #self.bars = self.read_song()
-        self.tracks = 1 # single track midi
+        self.tracks = 1 # single track midi # this data is overridden
         #self.tempo = 120
         self.tempo = self.generate_random_number(include_list=[60, 95])
         self.volume = 127
@@ -593,6 +608,219 @@ class Song(object):
             midifile.addNote(track, channel, notes[i], time[i], duration[i], volume[i])
 
         self.create_midi_file(file_name, midifile)
+
+
+    def update_track(self, track_num, time_signature=4):
+        self.track_num = track_num
+
+        # self.tempo = self.generate_random_number(include_list=[60,95])
+        self.volume = 127
+        self.duration = 1  # 1 beat long
+        self.track = self.track_num # track number to place the midi data
+        self.time = 0  # t on beat - 0
+        self.channel = 0  # 0-9: channel-10=>drum=>9
+        self.program = 0
+        self.pitch = 60  # C4 = Middle C
+        self.track_name = 'Base Track-' + str(self.track_num)
+
+        #self.midifile = MIDIFile(self.tracks)
+        self.midifile.addTrackName(self.track, self.time, self.track_name)
+        self.midifile.addTempo(self.track, self.time, self.tempo)
+        self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
+
+
+        # current_midi = file_name
+        markers = [121, 120]
+        print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
+        print 'BAR LENGTH: ' + repr(time_signature * TICKSPERBEAT_CONFIG) + ' ticks'
+        notes_list = []
+        bars = self.read_song_test(False)
+        print 'BPB: Beats per bar(quarter notes): ' + repr(time_signature)
+        print 'BARS: ' + repr(len(bars))
+        print 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo)
+        print 'TQB: Total quarter beats: ' + str(len(bars) * time_signature)
+        print 'Song Time: ' + str(len(bars) * time_signature * 60 / self.tempo) + ' seconds: ' + str(
+            round(len(bars) * time_signature * 1.0 / self.tempo, 2)) + ' minutes'
+        for bar in bars:
+            notes_list += self.bar_to_tuple(bar,
+                                            time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
+        print notes_list
+
+        note_position = 0
+        duration = 0
+        volume = 0
+        note = 1  # Representation of empty note: Also volume = 0
+        note_hold = 1
+        duration_hold = 0
+        note_position_hold = -1
+
+        notes_list_length = len(notes_list)
+        # Consideration last - or ,
+
+        for count in range(0, notes_list_length):
+            logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            # print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            # < notes_list_length - 1: takes care all notes except last note
+            if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
+                if duration_hold == 0: duration_hold = notes_list[count][1]  # duration hold
+                if note_hold == 1: note_hold = notes_list[count][0]  # note hold
+                if note_position_hold == -1: note_position_hold = note_position  # note position hold for - and ,
+                if notes_list[count + 1][0] == 121 and notes_list[count][
+                    0] != 120:  # to address the ,- order and combination
+                    duration_hold += notes_list[count + 1][1]  # duration hold for current note
+                note_position += notes_list[count][1]  # this position will continue increasing as usual
+                continue
+
+                # last note is already covered in the last loop
+                # Known issues:
+                # 1. - or , does not work when song start with - or ,
+
+                '''
+                    # last note handling   
+                if count == notes_list_length - 1:
+                if notes_list[count][0] in markers:
+                    if note_hold != 1: # if previous note is already on hold
+                    if notes_list[count][0] == 121: # if -, current note duration should change
+                        duration_hold += notes_list[count][1]
+                '''
+            if note_hold != 1:  # If last note is - or , : let it be handles by hold operation
+                # not by writing unnecessary code
+                self.midifile.addNote(self.track, self.channel, note_hold, note_position_hold, duration_hold,
+                                      self.volume)
+                note_position += notes_list[count][1]  # update note position
+                note_hold = 1  # disable note hold
+                note_position_hold = -1  # disable note position hold
+                duration_hold = 0  # disable duration hold
+                logger.debug('Line-2: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            else:
+                self.midifile.addNote(self.track, self.channel, notes_list[count][0], note_position,
+                                      notes_list[count][1], self.volume)
+                note_position += notes_list[count][1]
+                logger.debug('Line-3: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+
+
+    def make_multitrack(self, file_name='output.mid', time_signature=4):
+        file_name = 'midi_out_dir/tune_' + time_stamp() + '.mid'
+        file_name_song = 'midi_out_dir/tune_' + time_stamp() + '.txt'
+
+        self.tracks = 2  # number of tracks : track num starts with 0: the tracks should be sequential and the the range defined by self.tracks
+        self.midifile = MIDIFile(self.tracks)
+        self.track_num = 0 # # number of tracks : track num starts with 0: the tracks should be sequential and the the range defined by self.tracks
+        self.update_track(self.track_num)
+
+        self.track_num = 1
+        self.update_track(self.track_num)
+
+        self.create_midi_file(file_name, self.midifile)  # Create unique file
+        self.create_midi_file(CURRENT_MIDI, self.midifile)  # Create unique file
+
+    def make_midi_multitrack(self, file_name='output.mid', time_signature=4):
+        self.tracks = 1  # single track midi
+        # self.tempo = self.generate_random_number(include_list=[60,95])
+        self.volume = 127
+        self.duration = 1  # 1 beat long
+        self.track = 0  # mono track
+        self.time = 0  # t on beat - 0
+        self.channel = 0  # 0-9: channel-10=>drum=>9
+        self.program = 0
+        self.pitch = 60  # C4 = Middle C
+        self.track_name = 'Base Track'
+
+        self.midifile = MIDIFile(self.tracks)
+        self.midifile.addTrackName(self.track, self.time, self.track_name)
+        self.midifile.addTempo(self.track, self.time, self.tempo)
+        self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
+
+        file_name = 'midi_out_dir/tune_' + time_stamp() + '.mid'
+        file_name_song = 'midi_out_dir/tune_' + time_stamp() + '.txt'
+
+        # current_midi = file_name
+        markers = [121, 120]
+        print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
+        print 'BAR LENGTH: ' + repr(time_signature * TICKSPERBEAT_CONFIG) + ' ticks'
+        notes_list = []
+        bars = self.read_song_test(False)
+        print 'BPB: Beats per bar(quarter notes): ' + repr(time_signature)
+        print 'BARS: ' + repr(len(bars))
+        print 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo)
+        print 'TQB: Total quarter beats: ' + str(len(bars) * time_signature)
+        print 'Song Time: ' + str(len(bars) * time_signature * 60 / self.tempo) + ' seconds: ' + str(
+            round(len(bars) * time_signature * 1.0 / self.tempo, 2)) + ' minutes'
+        for bar in bars:
+            notes_list += self.bar_to_tuple(bar,
+                                            time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
+        print notes_list
+
+        with open(file_name_song, 'a') as fpw:
+            fpw.writelines(str(bars))
+            fpw.writelines('\n\n')
+            fpw.writelines(str(notes_list))
+            fpw.writelines('\n\n')
+            fpw.writelines('====SONG_INFO====\n')
+            fpw.writelines('BPB: Beats per bar(quarter notes): ' + repr(time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines('BARS: ' + repr(len(bars)))
+            fpw.writelines('\n\n')
+            fpw.writelines('BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo))
+            fpw.writelines('\n\n')
+            fpw.writelines('TQB: Total quarter beats: ' + str(len(bars) * time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines('Song Time: ' + str(len(bars) * time_signature * 60 / self.tempo) + ' seconds: ' + str(
+                round(len(bars) * time_signature * 1.0 / self.tempo, 2)) + ' minutes')
+
+        note_position = 0
+        duration = 0
+        volume = 0
+        note = 1  # Representation of empty note: Also volume = 0
+        note_hold = 1
+        duration_hold = 0
+        note_position_hold = -1
+
+        notes_list_length = len(notes_list)
+        # Consideration last - or ,
+
+        for count in range(0, notes_list_length):
+            logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            # print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            # < notes_list_length - 1: takes care all notes except last note
+            if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
+                if duration_hold == 0: duration_hold = notes_list[count][1]  # duration hold
+                if note_hold == 1: note_hold = notes_list[count][0]  # note hold
+                if note_position_hold == -1: note_position_hold = note_position  # note position hold for - and ,
+                if notes_list[count + 1][0] == 121 and notes_list[count][
+                    0] != 120:  # to address the ,- order and combination
+                    duration_hold += notes_list[count + 1][1]  # duration hold for current note
+                note_position += notes_list[count][1]  # this position will continue increasing as usual
+                continue
+
+                # last note is already covered in the last loop
+                # Known issues:
+                # 1. - or , does not work when song start with - or ,
+
+                '''
+                    # last note handling   
+                if count == notes_list_length - 1:
+                if notes_list[count][0] in markers:
+                    if note_hold != 1: # if previous note is already on hold
+                    if notes_list[count][0] == 121: # if -, current note duration should change
+                        duration_hold += notes_list[count][1]
+                '''
+            if note_hold != 1:  # If last note is - or , : let it be handles by hold operation
+                # not by writing unnecessary code
+                self.midifile.addNote(self.track, self.channel, note_hold, note_position_hold, duration_hold,
+                                      self.volume)
+                note_position += notes_list[count][1]  # update note position
+                note_hold = 1  # disable note hold
+                note_position_hold = -1  # disable note position hold
+                duration_hold = 0  # disable duration hold
+                logger.debug('Line-2: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            else:
+                self.midifile.addNote(self.track, self.channel, notes_list[count][0], note_position,
+                                      notes_list[count][1], self.volume)
+                note_position += notes_list[count][1]
+                logger.debug('Line-3: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+
+        return self.midifile
 
     def make_midi_test(self, file_name='output.mid', time_signature=4):
         self.tracks = 1  # single track midi
@@ -1038,8 +1266,18 @@ class Song(object):
         return str_tune
 
 def main():
+    if arg_value == 3:   # Multi-Track recording
+        song = Song()
+        song.read_song_test(0)
+        song.make_multitrack()
+
     if arg_value == 2:
-        print 2
+        #print 'Nothing to do'
+        #print alankars[1]
+        song = Song()
+        song.read_song_test(0)
+        song.make_midi_test()
+        play_midi_file(CURRENT_MIDI)
 
     if arg_value == 1:
 
@@ -1052,12 +1290,16 @@ def main():
         play_midi_file(CURRENT_BEAT)
 
     if arg_value is None:
-        #print 'Nothing to do'
-        #print alankars[1]
+        print 'Nothing to do'
+        # drum beats
+        # fix note, change volume, change intervals
+        # Read times spots and associate multipple track
+        # read time spots
         song = Song()
         song.read_song_test(0)
-        song.make_midi_test()
-        play_midi_file(CURRENT_MIDI)
+        song.make_multitrack()
+        #play_midi_file(CURRENT_MIDI)
+
 
     print 'DONE'
 if __name__ == '__main__':
