@@ -273,7 +273,7 @@ class Song(object):
     #self.bars = self.read_song()
         self.tracks = 1 # single track midi # this data is overridden
         #self.tempo = 120
-        self.tempo = self.generate_random_number(include_list=[60, 95])
+        self.tempo = self.generate_random_number(include_list=[70, 95, 115, 150, 180, 220, 250, 300])
         self.volume = 127
         self.duration = 1 # 1 beat long
         self.track = 0 # mono track
@@ -419,6 +419,51 @@ class Song(object):
         else:
             print 'Midi file ' + midi_file + ' does not exist.'
             exit(0)
+
+
+    def bar_to_tuple_test(self, bar, time_signature):
+        accent_str = '\'.'
+        # Due to fraction ans preciseness issue: only 2,3 and 4 subnotes are recommended per beat
+        # Check 1. if 1/2, 1/3,1/4 beat times work in the library implementation, 2. if there note off, note continue implementation is possible
+        equal_time_notes = re.findall('\(.*?\)|.', bar)
+        true_length_equal_notes = len([x for x in equal_time_notes if x not in accent_str])
+        equal_time = (time_signature * TICKSPERBEAT_CONFIG) / true_length_equal_notes
+        list_note = []
+        note_add = ''
+        skip_loop = False
+        for i in range(0, len(equal_time_notes)):
+            if skip_loop:
+                note_add += equal_time_notes[i]
+                skip_loop = False
+                #continue
+            else:
+                note_add = equal_time_notes[i]
+            if not '(' in equal_time_notes[i]:
+                if (i < len(equal_time_notes) - 1) and equal_time_notes[i + 1] in accent_str:
+                    #list_note.append((self.get_note_num(equal_time_notes[i] + equal_time_notes[i + 1]), equal_time))
+                    skip_loop = True
+                    continue
+                else:
+                    skip_loop = False
+                list_note.append((self.get_note_num(note_add), equal_time))
+            else:
+                sub_notes = equal_time_notes[i].replace('(', '').replace(')', '')
+                sub_notes_length = len([x for x in sub_notes if x not in accent_str])
+                for y in range(0, len(sub_notes)):
+                    if skip_loop:
+                        note_add += sub_notes[y]
+                        skip_loop = False
+                        #continue
+                    else:
+                        note_add = sub_notes[y]
+                    if (y < len(sub_notes) - 1) and sub_notes[y + 1] in accent_str:
+                        skip_loop = True
+                        continue
+                    else:
+                        skip_loop = False
+                    list_note.append((self.get_note_num(note_add), equal_time / sub_notes_length))
+
+        return list_note
 
     def bar_to_tuple(self, bar, time_signature):
         accent_str = '\'.'
@@ -1125,7 +1170,7 @@ class Song(object):
         print 'Cycle Time: ' + str(len(bars)*time_signature*60/self.tempo) + ' seconds: ' + str(round(len(bars)*time_signature*1.0/self.tempo, 2)) + ' minutes'
 
         for bar in bars:
-            notes_list += self.bar_to_tuple(bar,
+            notes_list += self.bar_to_tuple_test(bar,
                                             time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
         print notes_list
 
@@ -1209,8 +1254,8 @@ class Song(object):
             with open('song.txt') as fp:
                 notes = []
                 # read notes and duration
-                # raw_song = fp.readlines()
-                raw_song = [self.generate_beat('SrRgmMdDnN', 4)]
+                #raw_song = fp.readlines()
+                raw_song = [self.generate_beat('', 4)]
                 print raw_song
 
                 # filter song comments:
@@ -1243,16 +1288,16 @@ class Song(object):
     def generate_beat(self, exclude_list, bar_beats):
         counter = 0
         str_tune = ''
-        for i in range(32): # 1-bar music
+        for i in range(32): # 32 beats pattern
             rand_list = []
             rand_len = random.randint(1,4)
             for i in range(rand_len):
                 rand_found = False
                 while not rand_found:
-                    rand_num = random.randint(55,81)
+                    rand_num = random.randint(39,101)   # drum notes: 39 - 99
                     rand_note = self.get_note_name(rand_num)
-                    if rand_num == 80: rand_note = ','
-                    if rand_num == 81: rand_note = '-'
+                    if rand_num == 100: rand_note = ','
+                    if rand_num == 101: rand_note = '-'
                     if rand_note.replace('.', '').replace('\'', '') not in exclude_list: rand_found = True
                     #if rand_num not in exclude_list: rand_found = True
                 rand_list.append(rand_note)
@@ -1295,10 +1340,11 @@ def main():
         # fix note, change volume, change intervals
         # Read times spots and associate multipple track
         # read time spots
+        # generate beats: make multi data tuples: (note, volume, time): volume = 30,60,90,127: tempo: 70, 95, 115, 150, 180, 220, 250, 300
+        # Note = D#2 to D#7: 39-99
         song = Song()
-        song.read_song_test(0)
-        song.make_multitrack()
-        #play_midi_file(CURRENT_MIDI)
+        song.make_beats(8) # Still 32 hard coded beats will be genereated: need aerg for number of bars to generate
+        play_midi_file(CURRENT_BEAT)
 
 
     print 'DONE'
