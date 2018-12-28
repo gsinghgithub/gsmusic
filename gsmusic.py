@@ -5,9 +5,9 @@
 - Produce a pleasant midi file that gives song or music clip outlie
 
 ==== Technical implementations ====
-- make different feature calls : argument based
-- argparse implementation: expected - default run without any arg, 2. if arg given run feature for that, 3 number based
-
+- Sigle note read for beat making
+- Incorporate volume reading tuples
+- Identify: drums and not_num
 ==== Features implemented ====
 - Create random tune
 
@@ -49,6 +49,71 @@ beats = {
 
 }
 
+
+drums = {
+    'open_surdo': "g''", # 87
+    'mute_surdo': "n'", # 86
+    'castanets': "n'", # 85
+    'bell_tree': "n'", # 84
+    'jingle_bell': "n'", # 83
+    'shaker': "n'", # 82
+    'open_triangle': "n'", # 81
+    'mute_triangle': "n'", # 80
+    'open_cuica': "n'", # 79
+    'mute_cuica': "m'", # 78
+    'low_wood': "M'", # 77
+    'high_wood': "G'", # 76
+    'claves': "g'", # 75
+    'long_guiro': "R'", # 74
+    'short_guiro': "r'", # 73
+    'long_whistle': "S'", # 72
+    'short_whistle': "N", # 71
+    'maracas': "n", # 70
+    'cabasa': "D", # 69
+    'low_agogo': "d", # 68
+    'high_agogo': "P", # 67
+    'low_timble': "m", # 66
+    'high_timble': "M", # 65
+    'low_conga': "G", # 64
+    'open_high_conga': 'g', # 63
+    'mute_hi_conga': 'R', # 62
+    'low_bongo': 'r', # 61
+    'high_bongo': 'S', # 60
+    'ride_cymbal_2': "N.", # 59
+    'vibra_slap': "n.", # 58
+    'crash_cymbal_2': "D.", # 57
+    'cow_bell': "d.", # 56
+    'splash_cymbal': "P.", # 55
+    'tambourine': "m.", # 54
+    'ride_bell': "M.", # 53
+    'chinese_cymbal': "G.", # 52
+    'ride_cymbal_1': "g.", # 51
+    'high_tom': "R.", # 50
+    'crash_cymbal_1': "r.", # 49
+    'high_mid_tom': "S.", # 48
+    'low_mid_tom': "N..", # 47
+    'open_hi_hat': "n..", # 46
+    'low_tom': "D..", # 45
+    'pedal_hi_hat': "d..", # 44
+    'hi_floor_tom': "P..", # 43
+    'closed_hi_hat': "m..", # 42
+    'low_floor_tom': "M..", # 41
+    'electric_snare': "G..", # 40
+    'hand_clap': "g..", # 39 # Below notes not working for standard drum
+    'acoustic_snare': "d..", # 38
+    'side_stick': "d..", # 37
+    'bass_drum_1': "d..", # 36
+    'acoustic_bass_drum': "d..", # 35
+    'metronome_bell': "d..", # 34
+    'metronome_click': "d..", # 33
+    'square_click': "d..", # 32
+    'sticks': "d..", # 31
+    'scratch_pull': "d..", # 30
+    'scratch_push': "d..", # 29
+    'slap': "d..", # 28
+    'high_q': "g.." # 27
+}
+
 # Assumptions and Standards
 
 """
@@ -70,6 +135,10 @@ Note continuation: -
 Note silence: ,
 Notation: one cycle (measure or bar per line)
 Note without parenthesis => 1 beat note
+Middle C: C4 (some tools say C5 = middle C) = 60: Frequency = 261.63
+NOTE: C4=60 : GarageBand Middle C = C3: C3 (one behind):: FL Studio C5 (one octave ahead)
+Standard beats notes: D#2 to D#7: 39-99:g..(39) To  g'''(99)
+Standard working beat Notes: (VLC player and pygame midi player): g.. (39) To g'' (87) : 49 instruments
 121 = - = continue
 120 = , = pause/stop note
 => bar length is decided by the time signature
@@ -1138,6 +1207,114 @@ class Song(object):
             else: str_tune += '(' + ''.join(rand_list) + ')'
         return str_tune
 
+    # Single instrument
+    def make_beats_track(self, file_name='beatout.mid', time_signature=4):
+        self.tracks = 1 # single track midi
+        #self.tempo = 125
+        self.volume = 127
+        self.duration = 1 # 1 beat long
+        self.track = 0 # mono track
+        self.time = 0 # t on beat - 0
+        self.channel = 9  # 0-9: channel-10=>drum=>9
+        self.program = 0
+        self.pitch = 60 # C4 = Middle C
+        self.track_name = 'Base Track'
+
+        self.midifile = MIDIFile(self.tracks)
+        self.midifile.addTrackName(self.track, self.time, self.track_name)
+        self.midifile.addTempo(self.track, self.time, self.tempo)
+        self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
+
+        file_name = 'beat_out_dir/beat_' + time_stamp() + '.mid'
+        file_name_beats = 'beat_out_dir/beat_' + time_stamp() + '.txt'
+        # current_midi = file_name
+        markers = [121, 120]
+        print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
+        print 'BAR LENGTH: ' + repr(time_signature * TICKSPERBEAT_CONFIG) + ' ticks'
+        notes_list = []
+        bars = self.read_beats()
+        print 'BPB: Beats per bar(quarter notes): ' + repr(time_signature)
+        print 'BARS: ' + repr(len(bars))
+        print 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo)
+        print 'TQB: Total quarter beats: ' + str(len(bars)*time_signature)
+        print 'Cycle Time: ' + str(len(bars)*time_signature*60/self.tempo) + ' seconds: ' + str(round(len(bars)*time_signature*1.0/self.tempo, 2)) + ' minutes'
+
+        for bar in bars:
+            notes_list += self.bar_to_tuple_test(bar,
+                                            time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
+        print notes_list
+
+        with open(file_name_beats, 'a') as fpw:
+            fpw.writelines(str(bars))
+            fpw.writelines('\n\n')
+            fpw.writelines(str(notes_list))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPB: Beats per bar(quarter notes): ' + repr(time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BARS: ' + repr(len(bars)))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'TQB: Total quarter beats: ' + str(len(bars) * time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'Song Time: ' + str(len(bars) * time_signature * 60 / self.tempo) + ' seconds: ' + str(
+                round(len(bars) * time_signature * 1.0 / self.tempo, 2)) + ' minutes')
+
+        note_position = 0
+        duration = 0
+        volume = 0
+        note = 1  # Representation of empty note: Also volume = 0
+        note_hold = 1
+        duration_hold = 0
+        note_position_hold = -1
+
+        notes_list_length = len(notes_list)
+        # Consideration last - or ,
+
+        for count in range(0, notes_list_length):
+            logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            #print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            # < notes_list_length - 1: takes care all notes except last note
+            if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
+                if duration_hold == 0: duration_hold = notes_list[count][1]  # duration hold
+                if note_hold == 1: note_hold = notes_list[count][0]  # note hold
+                if note_position_hold == -1: note_position_hold = note_position  # note position hold for - and ,
+                if notes_list[count + 1][0] == 121 and notes_list[count][
+                    0] != 120:  # to address the ,- order and combination
+                    duration_hold += notes_list[count + 1][1]  # duration hold for current note
+                note_position += notes_list[count][1]  # this position will continue increasing as usual
+                continue
+
+                # last note is already covered in the last loop
+                # Known issues:
+                # 1. - or , does not work when song start with - or ,
+
+                '''
+                    # last note handling   
+                if count == notes_list_length - 1:
+                if notes_list[count][0] in markers:
+                    if note_hold != 1: # if previous note is already on hold
+                    if notes_list[count][0] == 121: # if -, current note duration should change
+                        duration_hold += notes_list[count][1]
+                '''
+            if note_hold != 1:  # If last note is - or , : let it be handles by hold operation
+                # not by writing unnecessary code
+                self.midifile.addNote(self.track, self.channel, note_hold, note_position_hold, duration_hold,
+                                      self.volume)
+                note_position += notes_list[count][1]  # update note position
+                note_hold = 1  # disable note hold
+                note_position_hold = -1  # disable note position hold
+                duration_hold = 0  # disable duration hold
+                logger.debug('Line-2: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            else:
+                self.midifile.addNote(self.track, self.channel, notes_list[count][0], note_position,
+                                      notes_list[count][1], self.volume)
+                note_position += notes_list[count][1]
+                logger.debug('Line-3: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+        self.create_midi_file(file_name, self.midifile)  # Create unique file
+        self.create_midi_file(CURRENT_BEAT, self.midifile)  # Create unique file
+
+
     def make_beats(self, file_name='beatout.mid', time_signature=4):
         self.tracks = 1 # single track midi
         #self.tempo = 125
@@ -1255,7 +1432,7 @@ class Song(object):
                 notes = []
                 # read notes and duration
                 #raw_song = fp.readlines()
-                raw_song = [self.generate_beat('', 4)]
+                raw_song = [self.generate_beat_track(4, 8, exclude_list='', notes_list=[drums['hand_clap']])]
                 print raw_song
 
                 # filter song comments:
@@ -1284,6 +1461,46 @@ class Song(object):
     # numbers: .P = 55: P' =  79: continue = - = 81: pause = , = 80 # in the program the extendend note=: 48...83
 
     # range : 55-81
+    def generate_beat_track(self, bar_beats, bar_num, exclude_list=[], notes_list=[]): # allow only note_list
+        # update to upper case for p and s
+        for index, my_note in enumerate(notes_list):
+            if 'p' in my_note: notes_list[index] = notes_list[index].replace('p', 'P')
+            if 's' in my_note: notes_list[index] = notes_list[index].replace('s', 'S')
+        # check if notes_list includes notes beyond [39-87]
+        for note in notes_list:
+            note_num = self.get_note_num(note)
+            if  note_num > 87 or note_num < 39:
+                print "\nERROR: Wrong drum note provided: " + str(note_num) + " :(Allowd is g.. to g''(39-87).\nProgram will now exit"
+                exit(-1)
+        if len(notes_list) < 1: notes_list += ['S']
+        set_first_note = False
+        counter = 0
+        str_tune = ''
+        for i in range(bar_num): # bar_num = number of bars to generate
+            rand_list = []
+            rand_len = random.randint(1,4)
+            for i in range(rand_len):
+                rand_found = False
+                while not rand_found:
+                    rand_num = random.randint(39,89)   # drum notes: 39 - 87
+                    rand_note = self.get_note_name(rand_num)
+                    if rand_num == 88: rand_note = ','
+                    if rand_num == 89: rand_note = '-'
+                    note_check = rand_note.replace('.', '').replace('\'', '')
+                    if  note_check not in exclude_list and rand_note in notes_list: rand_found = True
+                    #if rand_num not in exclude_list: rand_found = True
+                rand_list.append(rand_note)
+                if not set_first_note:
+                    set_first_note = True
+                    notes_list += ['-', ',']  # allowing continue and pause
+
+            if counter >= bar_beats:
+                counter = 0
+                str_tune += '  '
+            counter += 1
+            if rand_len == 1: str_tune += ''.join(rand_list)
+            else: str_tune += '(' + ''.join(rand_list) + ')'
+        return str_tune
 
     def generate_beat(self, exclude_list, bar_beats):
         counter = 0
@@ -1294,10 +1511,10 @@ class Song(object):
             for i in range(rand_len):
                 rand_found = False
                 while not rand_found:
-                    rand_num = random.randint(39,101)   # drum notes: 39 - 99
+                    rand_num = random.randint(39,89)   # drum notes: 39 - 87
                     rand_note = self.get_note_name(rand_num)
-                    if rand_num == 100: rand_note = ','
-                    if rand_num == 101: rand_note = '-'
+                    if rand_num == 88: rand_note = ','
+                    if rand_num == 89: rand_note = '-'
                     if rand_note.replace('.', '').replace('\'', '') not in exclude_list: rand_found = True
                     #if rand_num not in exclude_list: rand_found = True
                 rand_list.append(rand_note)
@@ -1311,6 +1528,19 @@ class Song(object):
         return str_tune
 
 def main():
+
+    if arg_value == 4: # beat making for multi octave instruments
+        # drum beats
+        # fix note, change volume, change intervals
+        # Read times spots and associate multipple track
+        # read time spots
+        # generate beats: make multi data tuples: (note, volume, time): volume = 30,60,90,127: tempo: 70, 95, 115, 150, 180, 220, 250, 300
+        # Note = D#2 to D#7: 39-99:
+        song = Song()
+        song.make_beats(8) # Still 32 hard coded beats will be genereated: need aerg for number of bars to generate
+        play_midi_file(CURRENT_BEAT)
+
+
     if arg_value == 3:   # Multi-Track recording
         song = Song()
         song.read_song_test(0)
@@ -1341,9 +1571,9 @@ def main():
         # Read times spots and associate multipple track
         # read time spots
         # generate beats: make multi data tuples: (note, volume, time): volume = 30,60,90,127: tempo: 70, 95, 115, 150, 180, 220, 250, 300
-        # Note = D#2 to D#7: 39-99
+        # Note = D#2 to D#7: 39-99:
         song = Song()
-        song.make_beats(8) # Still 32 hard coded beats will be genereated: need aerg for number of bars to generate
+        song.make_beats_track(8) # Still 32 hard coded beats will be genereated: need aerg for number of bars to generate
         play_midi_file(CURRENT_BEAT)
 
 
