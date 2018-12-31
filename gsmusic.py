@@ -5,9 +5,17 @@
 - Produce a pleasant midi file that gives song or music clip outlie
 
 ==== Technical implementations ====
-- Sigle note read for beat making
-- Incorporate volume reading tuples
-- Identify: drums and not_num
+- play  random patterns tunes: 32 beats
+- play  random pattern beats: 32 beats / all over notes
+- play fixd pattern-alankars
+- play fixd pattern-beats
+- check if chord notes are from seleted notes (or scale) to make 3-notes group OR stay with 2-notes combination
+
+- Find practical lowest and highest tempo
+- default_volume=127
+- collect URLs
+- sound (wav, mp3) player on web-gsmusic
+
 ==== Features implemented ====
 - Create random tune
 
@@ -34,18 +42,134 @@
 
 '''
 
-# Alankars
+'''
+Terms:
+- Chalan: In Hindustani music, a chalan is an extensive series of note patterns which summarises the development of a particular raga. It discloses the basic grammar of the raga and provides a treatment and melodic context of each tone
+- Pakad: Representative part of chalan
+- achal swar: SP
+- gamak: embellish the musical note (rather than straign rendering)
+- harkat: any specific effort for ornmentation of rendering is called harkat - such as meend, khatka, etc. 
+# URLs:
+- https://www.youtube.com/watch?v=Sw_Hb9BEzKg : one song in different raaga: anuja kamat
+- https://www.youtube.com/watch?v=StvibMQ4mfM : mayur chaudhary: explains terms
+- https://www.freesoundeffects.com/cat/cowbell-252/ : Buy sound effects
+- https://www.partnersinrhyme.com : Sounds purchase 
+'''
+song_patterns_1 = {
+    1: "111144115415", # 12-bar blue
 
-alankars = {
-    1: "SRGMPDNS\'",
-    2: ""
+
+    0: ""
+}
+
+song_freatures = {
+    1: "serious", # Raaga - darbari: kingli: courtous
+    2: "tender happiness", # Raaga - Bihag
 
 }
 
-beats = {
-    1: "S(SS)SS",
-    2: ""
+chord_progressions = {
+    1: "145", # Very common# 5-top common chord progressions
+    2: "1564",
+    3: "1645",
+    4: "6415",
+    5: "1465",
 
+    6: "1454",
+    7: "15634145",
+    8: "1425",
+    9: "1415",
+    10: "12345",
+    11: "1514",
+    12: "6543",
+    13: "1625",
+    14: "15634",
+    15: "251",
+
+    0: ""
+
+
+}
+
+chords = {
+    1: "SGP, SgP, RMD, RmD, GPN, MDS, MdS, PNR, PnR, DSG, NRm, Ngm, rMd, rGd, gPn, gmn, mDr, mnr, dSg, dNg, nRM, nrM"
+    # 22 triad chords: sgp, rmd, rgd, gpn, gmn, mds, mdr, mnr, pnr, dsg, dng, nrm, ngm: 13-bols
+}
+emotions = {  # budalli
+    1: "bond",
+    2: "unexpected",
+    3: "danger",
+    4: "achievement",
+    5: "lack",
+    6: "loss",
+    7: "injustice"
+}
+
+tune_patterns = {
+    1: "SRGMPDNS'----S'NDPMGRS",
+    2: "N.RGRS---"
+
+
+}
+
+beats_patterns = {
+    1:"[120:60:80:100:100:60:100:80]", # B2: Garageband
+    2: "S---S-S-S---",   # Keharva: 4 beats: dha---na-ti-nak-dhin---: dha - na ti na ka dhi na
+
+    0: ""
+
+}
+
+
+render_techniques = { # https://www.youtube.com/watch?v=p8PISbTAaF0    : https://www.youtube.com/watch?v=CBtFt3HUkT0 (anuja kamat)
+    1: "meend", # glide from one notre to another: S-S' # https://www.youtube.com/watch?v=Sw_Hb9BEzKg
+    2: "murki", # short and fast part of taan: RRSS is a murki
+    3: "khatka", # using a very short nearby note before long note: aa-aa---
+    4: "kana", # ghost note: a just touch note
+    5: "",
+    0: ""
+
+}
+
+thaats = { # gdr:rdg: two main groups of thaats: n-group () and m-group (): no-group: bilawal (all natural), bhairav (rd)
+    1: "SRGMPDN", # Bilawal:ionian: All natural (Western or church modes)
+    2: "SrGMPdN", # Bhairav:double harmonic: rd
+    3: "SRGMPDn", # khamaj:mixolydian: n
+    4: "SRgMPDn", # kafi:dorian: n:g
+    5: "SRGMPDN",  # asavari:aeolian: n:gd
+    6: "SRGMPDN",  # bhairavi:phrygian: n:gdr
+    7: "SRGMPDN",  # kalyan/yaman:lydian: m
+    8: "SRGMPDN",  # marwa:-: m:r (no mode)
+    9: "SRGMPDN",  # poorvi:hungarian minor: m:rd
+    10: "SRGMPDN", # todi:-: m:rdg (no mode)
+}
+
+ragas = { # raaga chalan
+    1: "SRGmPDN[(GNP),(N.RG-RmP-mPD-DNS')]", # yaman (feature = use of m): [(vaadi, samvadi, anuvaadi), (pakad), (aroh), (avaroh: <special avarioh pattern>)]
+    2: "SRGMmPDN[(GNP),(N.RGmPR-GMG-RGRN.RS),(N.RGMDNS'),(S'NDPmGMGRS:GMG)", # yaman kalyan: feature = use of M and specifc pattern = GMG
+    3: "", # suddh kalyan (or bhoop kalyan): Feature = Aroh = Bhoopali: Avaroh =
+    4: "", # bhoopali
+    4: "", # darbari: serious: Feature = : chalan => vibration at G and D
+    5: "", # bihag : tender happiness: bond:
+    6: "", #
+
+    0: ""
+}
+
+
+alankars = {
+    1: "SRGMPDNS'-S'NDPMGRS", # on random play change the casd of the latters: srgmpdns
+    2: "SSRRGGMMPPDDNNS'S'-S'S'NNDDPPMMGGRRSS",
+    3: "SR-RG-GM-MP-PD-DN-NS'-S'N-ND-DP-PM-MG-GR-RS",
+    4: "SRG-RGM-GMP-MPD-PDN-DNS'-S'ND-NDP-DPM-PMG-MGR-GRS",
+    5: "SRGM-RGMP-GMPD-MPDN-PDNS'-S'NDP-NDPM-DPMG-PMGR-MGRS",
+    6: "SRSRG-RGRGM-GMGMP-MPMPD-PDPDN-DNDNS'-S'NS'ND-NDNDP-DPDPM-PMPMG-MGMGR-GRGRS",
+    7: "SRGSRGM-RGMRGMP-GMPGMPD-MPDMPDN-PDNPDNS'-S'NDS'NDP-NDPNDPM-DPMDPMG-PMGPMGR-MGRMGRS",
+    8: "SG-RM-GP-MD-PN-DS'-S'D-NP-DM-PG-MR-GS",
+    9: "SM-RP-GD-MN-PS'-S'P-NM-DG-PR-MS",
+    10: "S-SRS-SRGRS-SRGMGRS-SRGMPMGRS-SRGMPDPMGRS-SRGMPDNDPMGRS-SRGMPDNS'NDPMGRS",
+    11: "S'-S'NS'-S'NDNS'-S'NDPDNS'-S'NDPMPDNS'-S'NDPMGMPDNS'-S'NDPMGRGMPDNS'-S'NDPMGRSRGMPDNS'",
+    0: ""
 
 }
 
@@ -134,6 +258,10 @@ equally divided sub interval of single beat: (...) - under parenthesis
 Note continuation: -
 Note silence: ,
 Notation: one cycle (measure or bar per line)
+Notation: Natural notes = All uppercase: Altered Notes = All lowercase: S and P = always natural
+Notation: Altered notes = rgdnm: Total Flat notes = rgdn: Total Sharp Note = m = Tivra Ma (Ma#)
+- SRGMPDNS': S..S'': srgmpdns:
+- NOTE: Soundofindia NOTATION (not .gsm format: only difference: m = Natural: M = Tivra Ma)
 Note without parenthesis => 1 beat note
 Middle C: C4 (some tools say C5 = middle C) = 60: Frequency = 261.63
 NOTE: C4=60 : GarageBand Middle C = C3: C3 (one behind):: FL Studio C5 (one octave ahead)
@@ -144,7 +272,7 @@ Standard working beat Notes: (VLC player and pygame midi player): g.. (39) To g'
 => bar length is decided by the time signature
 => two bars must be seaparated by space: number of spaces does not matter: one or more spaces are same
 => All notes together will be treated as one bar - each note taking time frpm the bar time
-
+=> Effective volumes: 60, 80, 100, 120
 ==== Alankars ====
 SRGMPDNS' S'NDPMGRS
 SRG RGM GMP
@@ -1207,6 +1335,124 @@ class Song(object):
             else: str_tune += '(' + ''.join(rand_list) + ')'
         return str_tune
 
+
+    def make_beats_volume(self, file_name='beatout.mid', time_signature=4):
+        self.tracks = 1 # single track midi
+        #self.tempo = 125
+        self.volume = 127
+        self.duration = 1 # 1 beat long
+        self.track = 0 # mono track
+        self.time = 0 # t on beat - 0
+        self.channel = 9  # 0-9: channel-10=>drum=>9
+        self.program = 0
+        self.pitch = 60 # C4 = Middle C
+        self.track_name = 'Base Track'
+
+        self.midifile = MIDIFile(self.tracks)
+        self.midifile.addTrackName(self.track, self.time, self.track_name)
+        self.midifile.addTempo(self.track, self.time, self.tempo)
+        self.midifile.addProgramChange(self.track, self.channel, self.time, self.program)
+
+        file_name = 'beat_out_dir/beat_' + time_stamp() + '.mid'
+        file_name_beats = 'beat_out_dir/beat_' + time_stamp() + '.txt'
+        # current_midi = file_name
+        markers = [121, 120]
+        print 'Ticks per beat: ' + repr(TICKSPERBEAT_CONFIG)
+        print 'BAR LENGTH: ' + repr(time_signature * TICKSPERBEAT_CONFIG) + ' ticks'
+        notes_list = []
+        bars = self.read_beats()
+        print 'BPB: Beats per bar(quarter notes): ' + repr(time_signature)
+        print 'BARS: ' + repr(len(bars))
+        print 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo)
+        print 'TQB: Total quarter beats: ' + str(len(bars)*time_signature)
+        print 'Cycle Time: ' + str(len(bars)*time_signature*60/self.tempo) + ' seconds: ' + str(round(len(bars)*time_signature*1.0/self.tempo, 2)) + ' minutes'
+
+        for bar in bars:
+            notes_list += self.bar_to_tuple_test(bar,
+                                            time_signature)  # One note per beat: is the assumption: => 4 beat per measure => measure = cycle
+
+        print "NOTES LIST: " + repr(notes_list)
+        # Modify notes_list
+        print "TESTING ..."
+        for index, my_tuple in enumerate(notes_list):
+            my_volume = self.generate_random_number(include_list=[127, 100, 60])
+            notes_list[index] += (my_volume,1,56,5,) # ',' needed for a number to put as tuple: volume, channel, tempo, instrument: and more
+        print notes_list
+
+        #exit(0) # test code
+
+        with open(file_name_beats, 'a') as fpw:
+            fpw.writelines(str(bars))
+            fpw.writelines('\n\n')
+            fpw.writelines(str(notes_list))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPB: Beats per bar(quarter notes): ' + repr(time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BARS: ' + repr(len(bars)))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'BPM: Beats per minute (at song start):Tempo: ' + str(self.tempo))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'TQB: Total quarter beats: ' + str(len(bars) * time_signature))
+            fpw.writelines('\n\n')
+            fpw.writelines( 'Song Time: ' + str(len(bars) * time_signature * 60 / self.tempo) + ' seconds: ' + str(
+                round(len(bars) * time_signature * 1.0 / self.tempo, 2)) + ' minutes')
+
+        note_position = 0
+        duration = 0
+        volume = 0
+        note = 1  # Representation of empty note: Also volume = 0
+        note_hold = 1
+        duration_hold = 0
+        note_position_hold = -1
+
+        notes_list_length = len(notes_list)
+        # Consideration last - or ,
+
+        for count in range(0, notes_list_length):
+            logger.debug('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            #print('Line-1: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            # < notes_list_length - 1: takes care all notes except last note
+            if count < notes_list_length - 1 and notes_list[count + 1][0] in markers:
+                if duration_hold == 0: duration_hold = notes_list[count][1]  # duration hold
+                if note_hold == 1:
+                    note_hold = notes_list[count][0]  # note hold
+                    volume = notes_list[count][2] # note volume
+                if note_position_hold == -1: note_position_hold = note_position  # note position hold for - and ,
+                if notes_list[count + 1][0] == 121 and notes_list[count][
+                    0] != 120:  # to address the ,- order and combination
+                    duration_hold += notes_list[count + 1][1]  # duration hold for current note
+                note_position += notes_list[count][1]  # this position will continue increasing as usual
+                continue
+
+                # last note is already covered in the last loop
+                # Known issues:
+                # 1. - or , does not work when song start with - or ,
+
+                '''
+                    # last note handling   
+                if count == notes_list_length - 1:
+                if notes_list[count][0] in markers:
+                    if note_hold != 1: # if previous note is already on hold
+                    if notes_list[count][0] == 121: # if -, current note duration should change
+                        duration_hold += notes_list[count][1]
+                '''
+            if note_hold != 1:  # If last note is - or , : let it be handles by hold operation
+                # not by writing unnecessary code
+                self.midifile.addNote(self.track, self.channel, note_hold, note_position_hold, duration_hold,
+                                      volume)
+                note_position += notes_list[count][1]  # update note position
+                note_hold = 1  # disable note hold
+                note_position_hold = -1  # disable note position hold
+                duration_hold = 0  # disable duration hold
+                logger.debug('Line-2: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+            else:
+                self.midifile.addNote(self.track, self.channel, notes_list[count][0], note_position,
+                                      notes_list[count][1], notes_list[count][2])
+                note_position += notes_list[count][1]
+                logger.debug('Line-3: Note: ' + repr(notes_list[count][0]) + ': Note position: ' + repr(note_position))
+        self.create_midi_file(file_name, self.midifile)  # Create unique file
+        self.create_midi_file(CURRENT_BEAT, self.midifile)  # Create unique file
+
     # Single instrument
     def make_beats_track(self, file_name='beatout.mid', time_signature=4):
         self.tracks = 1 # single track midi
@@ -1432,7 +1678,7 @@ class Song(object):
                 notes = []
                 # read notes and duration
                 #raw_song = fp.readlines()
-                raw_song = [self.generate_beat_track(4, 8, exclude_list='', notes_list=[drums['hand_clap']])]
+                raw_song = [self.generate_beat_track(4, 32, exclude_list='', notes_list=[drums['shaker']])]
                 print raw_song
 
                 # filter song comments:
@@ -1529,6 +1775,23 @@ class Song(object):
 
 def main():
 
+    if arg_value == 6: # volume associated with each note
+        song = Song()
+        song.make_beats_volume(8)
+        play_midi_file(CURRENT_BEAT)
+
+    if arg_value == 5:
+        # drum beats
+        # fix note, change volume, change intervals
+        # Read times spots and associate multipple track
+        # read time spots
+        # generate beats: make multi data tuples: (note, volume, time): volume = 30,60,90,127: tempo: 70, 95, 115, 150, 180, 220, 250, 300
+        # Note = g.. to g'': 39-87:
+        song = Song()
+        song.make_beats_track(8) # Still 32 hard coded beats will be genereated: need aerg for number of bars to generate
+        play_midi_file(CURRENT_BEAT)
+
+
     if arg_value == 4: # beat making for multi octave instruments
         # drum beats
         # fix note, change volume, change intervals
@@ -1566,15 +1829,8 @@ def main():
 
     if arg_value is None:
         print 'Nothing to do'
-        # drum beats
-        # fix note, change volume, change intervals
-        # Read times spots and associate multipple track
-        # read time spots
-        # generate beats: make multi data tuples: (note, volume, time): volume = 30,60,90,127: tempo: 70, 95, 115, 150, 180, 220, 250, 300
-        # Note = D#2 to D#7: 39-99:
-        song = Song()
-        song.make_beats_track(8) # Still 32 hard coded beats will be genereated: need aerg for number of bars to generate
-        play_midi_file(CURRENT_BEAT)
+
+
 
 
     print 'DONE'
